@@ -3,7 +3,7 @@ systemctl enable kiosk.service;
 systemctl disable firstboot.service;
 #raspi-config --expand-rootfs;
 set -e;
-sudo raspi-config nonint do_expand_rootfs;
+raspi-config nonint do_expand_rootfs;
 echo "Root filesystem expanded.";
 echo "Reboot recommended.";
 cp /etc/hosts /etc/hosts.backup;
