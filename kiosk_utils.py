@@ -9,6 +9,7 @@ import subprocess
 import logging
 import requests
 import kiosk_config
+from pathlib import Path
 
 from time import sleep
 
@@ -90,18 +91,37 @@ def speak_status(f, background = True)-> None:
         except Exception as e:
             logging.error(f"Error playing sound: {f}, {e}")
 
-def set_brightness(value: int, path: str='/sys/class/backlight/rpi_backlight/brightness') -> None:
-    """
-    Set the screen brightness.
-    :param value: Brightness value (0-255)
-    """
-    try:
-        with open(path, 'w') as f:
-            f.write(str(value))
-            logging.info('setting brightness to: {}'.format(value))
-    except Exception as e:
-        logging.error(f"Failed to set brightness: {e}")
-    
+def set_brightness(level: int, config: dict) -> None:
+    backlight_base = Path(
+        config.get("screen_brightness_path", "/sys/class/backlight")
+    )
+
+    devices = list(backlight_base.glob("*"))
+    if not devices:
+        raise RuntimeError(f"No backlight device found on {backlight_base}")
+
+    errors = []
+    successes = 0
+
+    for device in devices:
+        try:
+            max_brightness = int((device / "max_brightness").read_text().strip())
+            safe_level = max(0, min(level, max_brightness))
+            with open(device / "brightness", "w") as f:
+                f.write(str(safe_level))
+            successes += 1
+            logging.debug(f"Set brightness to {safe_level} on {device}")
+
+        except Exception as e:
+            errors.append((str(device), str(e)))
+
+    if successes == 0:
+        logging.error("Failed to set brightness on all devices: %s", errors)
+        raise RuntimeError(f"Failed to set brightness on all devices: {errors}")
+
+    if errors:
+        logging.debug("Some backlight devices failed, but brightness was set: %s", errors)
+
 def host_connection_ok(url) -> None:
     '''
     Test connection to host
@@ -144,9 +164,15 @@ class WatchDog(object):
             return(False)
 def main():
     config = kiosk_config.read_config(os.path.join(os.getcwd(),'kiosk.ini'))
-    speak_status('assets/lang_LAT.wav', background=True)
+    #speak_status('assets/lang_LAT.wav', background=True)
     #speak_status(os.path.join(config['assets_loader'], 'start_print{}.wav'.format('LAT')), background=False)
-    #set_brightness(100, config['screen_brightness_path'])
+    set_brightness(255, config)
+    sleep(5)
+    set_brightness(100, config)
+    sleep(5)
+    set_brightness(0, config)
+
+
     # w = config['watchdog_device']
     # print(w)
     # wdObj = WatchDog(w)
