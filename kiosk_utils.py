@@ -91,11 +91,8 @@ def speak_status(f, background = True)-> None:
         except Exception as e:
             logging.error(f"Error playing sound: {f}, {e}")
 
-def set_brightness(level: int, config: dict) -> None:
-    backlight_base = Path(
-        config.get("screen_brightness_path", "/sys/class/backlight")
-    )
-
+def set_brightness(level: int, path:str = "/sys/class/backlight") -> None:
+    backlight_base = Path(path)
     devices = list(backlight_base.glob("*"))
     if not devices:
         raise RuntimeError(f"No backlight device found on {backlight_base}")
