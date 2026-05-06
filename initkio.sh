@@ -1,7 +1,11 @@
 #!/bin/bash
 systemctl enable kiosk.service;
 systemctl disable firstboot.service;
-raspi-config --expand-rootfs;
+#raspi-config --expand-rootfs;
+set -e;
+sudo raspi-config nonint do_expand_rootfs;
+echo "Root filesystem expanded.";
+echo "Reboot recommended.";
 cp /etc/hosts /etc/hosts.backup;
 oldHostname=$(cat /proc/sys/kernel/hostname);
 ipo=$(ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1 |  cut -d. -f2);
