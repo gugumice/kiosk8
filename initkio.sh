@@ -1,7 +1,7 @@
 #!/bin/bash
 systemctl enable kiosk.service;
 systemctl disable firstboot.service;
-raspi-config --expand-rootfs > /dev/null;
+raspi-config --expand-rootfs;
 cp /etc/hosts /etc/hosts.backup;
 oldHostname=$(cat /proc/sys/kernel/hostname);
 ipo=$(ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1 |  cut -d. -f2);
