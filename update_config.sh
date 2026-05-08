@@ -36,6 +36,12 @@ modify_config_file() {
         else
             printf "%s\n" "$line" >> "$temp_file"
         fi
+        if [[ "$line" =~ ^disable_fw_kms_setup=1$ ]]; then
+            printf "#%s\n" "$line" >> "$temp_file"
+            found=1
+        else
+            printf "%s\n" "$line" >> "$temp_file"
+        fi
     done < "$CONFIG_FILE"
     
     if [[ "$found" -eq 0 ]]; then
