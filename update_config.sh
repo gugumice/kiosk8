@@ -1,73 +1,28 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-CONFIG_FILE=""
-COMMAND_LINE_FILE="/boot/firmware/cmdline.txt"
+set -e
 
-sanitize_config_file() {
-    if [[ -z "$CONFIG_FILE" ]]; then
-        printf "Error: No config file path provided\n" >&2
-        return 1
-    fi
+CONFIG="/boot/firmware/config.txt"
 
-    if [[ ! -f "$CONFIG_FILE" ]]; then
-        printf "Error: Config file not found: %s\n" "$CONFIG_FILE" >&2
-        return 1
-    fi
+if [[ ! -f "$CONFIG" ]]; then
+    echo "ERROR: $CONFIG not found"
+    exit 1
+fi
 
-    if [[ ! -r "$CONFIG_FILE" || ! -w "$CONFIG_FILE" ]]; then
-        printf "Error: Config file is not readable or writable: %s\n" "$CONFIG_FILE" >&2
-        return 1
-    fi
-}
+echo "Backing up config.txt..."
+sudo cp "$CONFIG" "${CONFIG}.bak.$(date +%Y%m%d_%H%M%S)"
 
-modify_config_file() {
-    local temp_file; temp_file=$(mktemp) || return 1
-    local found=0
-    local line;
+echo "Updating config.txt..."
 
-    sed -i '/^# Additional overlays.*/a dtoverlay=pi3-disable-wifi\ndtoverlay=pi3-disable-bt' "$temp_file"
-    sed -i '1 s|$| video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0|' "$COMMAND_LINE_FILE"
+# Replace dtoverlay=vc4-kms-dsi-7inch
+sudo sed -i \
+    's/^dtoverlay=vc4-kms-dsi-7inch$/dtoverlay=vc4-kms-v3d\ndtoverlay=waveshare-43inch-dsi\nmax_framebuffers=2/' \
+    "$CONFIG"
 
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        if [[ "$line" =~ ^dtoverlay=vc4-kms-v3d$ ]]; then
-            #printf "#%s\n" "$line" >> "$temp_file"
-            printf "dtoverlay=vc4-kms-dsi-7inch\n" >> "$temp_file"
-            found=1
-        else
-            printf "%s\n" "$line" >> "$temp_file"
-        fi
-        if [[ "$line" =~ ^disable_fw_kms_setup=1$ ]]; then
-            printf "#%s\n" "$line" >> "$temp_file"
-            found=1
-        else
-            printf "%s\n" "$line" >> "$temp_file"
-        fi
-    done < "$CONFIG_FILE"
-    
-    if [[ "$found" -eq 0 ]]; then
-        rm -f "$temp_file"
-        printf "Error: Target dtoverlay line not found in config file\n" >&2
-        return 1
-    fi
+# Comment out disable_fw_kms_setup=1 if not already commented
+sudo sed -i \
+    's/^disable_fw_kms_setup=1$/#disable_fw_kms_setup=1/' \
+    "$CONFIG"
 
-    mv "$temp_file" "$CONFIG_FILE"
-}
-
-main() {
-    if [[ $# -ne 1 ]]; then
-        printf "Usage: %s <path_to_config_file>\n" "$0" >&2
-        return 1
-    fi
-
-    CONFIG_FILE="$1"
-
-    if ! sanitize_config_file; then
-        return 1
-    fi
-
-    if ! modify_config_file; then
-        return 1
-    fi
-}
-
-main "$@"
+echo
+echo "Updated $CONFIG successfully."
