@@ -10,9 +10,7 @@ import logging
 import requests
 import kiosk_config
 from pathlib import Path
-
 from time import sleep
-
 queue_to_gui = Queue()
 config = dict()
 
@@ -119,6 +117,39 @@ def set_brightness(level: int, path:str = "/sys/class/backlight") -> None:
     if errors:
         logging.debug("Some backlight devices failed, but brightness was set: %s", errors)
 
+
+def set_display(state: str) -> None:
+    """
+    Control X11 screen blanking.
+
+    Args:
+        state: "on" or "off"
+
+    on  -> DISPLAY=:0 xset s reset
+    off -> DISPLAY=:0 xset s activate
+    """
+
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+
+    # Uncomment if needed when running outside the X session
+    # env["XAUTHORITY"] = "/home/pi/.Xauthority"
+
+    if state.lower() == "on":
+        cmd = ["xset", "s", "reset"]
+    elif state.lower() == "off":
+        cmd = ["xset", "s", "activate"]
+    else:
+        raise ValueError("state must be 'on' or 'off'")
+
+    subprocess.run(
+        cmd,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
 def host_connection_ok(url) -> None:
     '''
     Test connection to host
@@ -135,6 +166,7 @@ def is_working_time(now:str = None, start:str='7:30', end:str='19:00', workdays:
     # Convert strings to time objects
     start_time = datetime.strptime(start, "%H:%M").time()
     end_time = datetime.strptime(end, "%H:%M").time()
+
     return (now.weekday() in workdays) and (start_time <= now.time() <= end_time)
 
 class WatchDog(object):

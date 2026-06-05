@@ -142,16 +142,20 @@ class MainFrame(ctk.CTkFrame):
             self.disable_buttons(self.config['default_language_index'])
             self.enable_buttons(self.config['default_language_index'])
         # Set screen backlight to normal or low
-        kiosk_utils.set_brightness(
-            self.config['screen_brightness_normal']
-            if kiosk_utils.is_working_time(
-                start=self.config['working_hours'][0],
-                end=self.config['working_hours'][1],
-                workdays=self.config['working_days'],
-            )
-            else
-                self.config['screen_brightness_inactive'],
-                        self.config['screen_brightness_path'])
+
+        if kiosk_utils.is_working_time(start=self.config['working_hours'][0],end=self.config['working_hours'][1], workdays=self.config['working_days']):
+            kiosk_utils.set_brightness(self.config.get('screen_brightness_normal', 100), self.config.get('screen_brightness_path'))
+            try:
+                kiosk_utils.set_display('on')
+            except Exception as e:
+                logger.error('Error occurred while setting display: {}'.format(e))
+        else:
+            kiosk_utils.set_brightness(self.config.get('screen_brightness_inactive', 50), self.config.get('screen_brightness_path'))
+            # Enable power saving mode
+            try:
+                kiosk_utils.set_display('off')
+            except Exception as e:
+                logger.error('Error occurred while setting display: {}'.format(e) )
         # Delete existing timer if present
         if self._default_bttn_after:
             self.after_cancel(self._default_bttn_after)
