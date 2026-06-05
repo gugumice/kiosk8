@@ -94,7 +94,7 @@ class MainFrame(ctk.CTkFrame):
         self._default_bttn_after = None
         self.init_buttons()
         self.enable_buttons(self.selected_button)
-        # self.set_def_timeout()
+        self.set_to_default_bttn
     
     def init_buttons(self):
         for lang in enumerate(self.config['languages']):
