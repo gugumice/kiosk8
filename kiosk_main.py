@@ -146,14 +146,14 @@ class MainFrame(ctk.CTkFrame):
         if kiosk_utils.is_working_time(start=self.config['working_hours'][0],end=self.config['working_hours'][1], workdays=self.config['working_days']):
             kiosk_utils.set_brightness(self.config.get('screen_brightness_normal', 100), self.config.get('screen_brightness_path'))
             try:
-                kiosk_utils.set_display('on')
+                kiosk_utils.set_display('off')
             except Exception as e:
                 logger.error('Error occurred while setting display: {}'.format(e))
         else:
             kiosk_utils.set_brightness(self.config.get('screen_brightness_inactive', 50), self.config.get('screen_brightness_path'))
             # Enable power saving mode
             try:
-                kiosk_utils.set_display('off')
+                kiosk_utils.set_display('on')
             except Exception as e:
                 logger.error('Error occurred while setting display: {}'.format(e) )
         # Delete existing timer if present
