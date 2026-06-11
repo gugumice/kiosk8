@@ -117,38 +117,36 @@ def set_brightness(level: int, path:str = "/sys/class/backlight") -> None:
     if errors:
         logging.debug("Some backlight devices failed, but brightness was set: %s", errors)
 
+import os
+import subprocess
 
-def set_display(state: str) -> None:
+def set_screen_timeout(timeout_seconds: int) -> None:
     """
-    Control X11 screen blanking.
+    Set X11 screen blanking timeout.
 
-    Args:
-        state: "on" or "off"
-
-    on  -> DISPLAY=:0 xset s reset
-    off -> DISPLAY=:0 xset s activate
+    timeout_seconds=0 disables the screen saver.
     """
 
     env = os.environ.copy()
     env["DISPLAY"] = ":0"
-
-    # Uncomment if needed when running outside the X session
-    # env["XAUTHORITY"] = "/home/pi/.Xauthority"
-
-    if state.lower() == "on":
-        cmd = ["xset", "s", "reset"]
-    elif state.lower() == "off":
-        cmd = ["xset", "s", "activate"]
+    #["xset", "s", "off"],
+    if timeout_seconds <= 0:
+        subprocess.run(
+            ["xset", "s", "reset"],
+            env=env,
+            check=True
+        )
     else:
-        raise ValueError("state must be 'on' or 'off'")
-
-    subprocess.run(
-        cmd,
-        env=env,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+        subprocess.run(
+            ["xset", "s", "on"],
+            env=env,
+            check=True
+        )
+        subprocess.run(
+            ["xset", "s", str(timeout_seconds), str(timeout_seconds)],
+            env=env,
+            check=True
+        )
 
 def host_connection_ok(url) -> None:
     '''
@@ -165,8 +163,7 @@ def is_working_time(now:str = None, start:str='7:30', end:str='19:00', workdays:
     now = datetime.now() if now is None else datetime.strptime(now, "%H:%M").time()
     # Convert strings to time objects
     start_time = datetime.strptime(start, "%H:%M").time()
-    end_time = datetime.strptime(end, "%H:%M").time()
-
+    end_time = datetime.strptime(end, "%H:%M").time()    
     return (now.weekday() in workdays) and (start_time <= now.time() <= end_time)
 
 class WatchDog(object):
@@ -193,13 +190,17 @@ class WatchDog(object):
             return(False)
 def main():
     config = kiosk_config.read_config(os.path.join(os.getcwd(),'kiosk.ini'))
+    print(config)
+    print(is_working_time(start=config['working_hours'][0], end=config['working_hours'][1], workdays=tuple(config['working_days'])))
+
+
     #speak_status('assets/lang_LAT.wav', background=True)
     #speak_status(os.path.join(config['assets_loader'], 'start_print{}.wav'.format('LAT')), background=False)
-    set_brightness(255, config)
-    sleep(5)
-    set_brightness(100, config)
-    sleep(5)
-    set_brightness(0, config)
+    # set_brightness(255, config)
+    # sleep(5)
+    # set_brightness(100, config)
+    # sleep(5)
+    # set_brightness(0, config)
 
 
     # w = config['watchdog_device']

@@ -141,20 +141,17 @@ class MainFrame(ctk.CTkFrame):
             self.selected_button = self.config['default_language_index']
             self.disable_buttons(self.config['default_language_index'])
             self.enable_buttons(self.config['default_language_index'])
-        # Set screen backlight to normal or low
-        if kiosk_utils.is_working_time(start=self.config['working_hours'][0],end=self.config['working_hours'][1], workdays=self.config['working_days']):
-            kiosk_utils.set_brightness(self.config.get('screen_brightness_inactive', 50), self.config.get('screen_brightness_path'))
-            # Enable power saving mode
-            try:
-                kiosk_utils.set_display('on')
-            except Exception as e:
-                logger.error('Error occurred while setting display: {}'.format(e) ) 
+        # Set screen backlight to normal or low, depending on working hours, enable/disable screen powersave
+        logger.debug('Checking working time for setting brightness and powersave')
+        if kiosk_utils.is_working_time(start=self.config['working_hours'][0], end=self.config['working_hours'][1], workdays=self.config['working_days'],):
+            kiosk_utils.set_brightness(self.config['screen_brightness_normal'], self.config['screen_brightness_path'])
+            kiosk_utils.set_screen_timeout(0)
+            logger.debug('Set normal brightness: {}, powersave: {}'.format(self.config['screen_brightness_normal'], self.config['screen_powersave']))
         else:
-            kiosk_utils.set_brightness(self.config.get('screen_brightness_normal', 100), self.config.get('screen_brightness_path'))
-            try:
-                kiosk_utils.set_display('off')
-            except Exception as e:
-                logger.error('Error occurred while setting display: {}'.format(e))
+            kiosk_utils.set_brightness(self.config['screen_brightness_inactive'], self.config['screen_brightness_path'])
+            kiosk_utils.set_screen_timeout(self.config['screen_powersave'])
+            logger.debug('Set inactive brightness: {}, powersave: on'.format(self.config['screen_brightness_inactive'], self.config['screen_powersave']))
+
         # Delete existing timer if present
         if self._default_bttn_after:
             self.after_cancel(self._default_bttn_after)
@@ -166,10 +163,10 @@ class MainFrame(ctk.CTkFrame):
         self.selected_button = lang[0]
         # Set screen backlight to active
         kiosk_utils.set_brightness(self.config["screen_brightness_active"], self.config['screen_brightness_path'])
+        kiosk_utils.set_screen_timeout(0)
         #Debounce
         self.disable_buttons(self.selected_button)
         self.after(self.config['button_debounce_time_ms'], self.enable_buttons, self.selected_button)
-
         if self._default_bttn_after:
             self.after_cancel(self._default_bttn_after)
 
@@ -243,7 +240,6 @@ class KioskPopup(ctk.CTkToplevel):
         self.title = "KioskPopup"
         self.attributes("-topmost", True)
         self.time_created = time.time()
-
         self.frame = PopupFrame(master=self, config=config)
         self.frame.pack(fill=tk.BOTH, expand=True)
 
@@ -321,6 +317,9 @@ class KioskApp(ctk.CTk):
             if not self.popup_window.frame.icon.stopped():
                 return
         if not self.queue_to_gui.empty():
+            logger.debug('Exiting powersave or low brightness mode due to message in queue')
+            kiosk_utils.set_screen_timeout(0)
+            kiosk_utils.set_brightness(self.config['screen_brightness_normal'], self.config['screen_brightness_path'])
             ticket = self.queue_to_gui.get_nowait()
             if not isinstance(ticket, kiosk_utils.Ticket):
                 logger.error(f"Invalid message: {ticket}")
