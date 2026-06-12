@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 CONFIG_FILE=""
+COMMAND_LINE_FILE="/boot/firmware/cmdline.txt"
 
 sanitize_config_file() {
     if [[ -z "$CONFIG_FILE" ]]; then
@@ -25,19 +26,18 @@ modify_config_file() {
     local line;
 
     sed -i '/^# Additional overlays.*/a dtoverlay=pi3-disable-wifi\ndtoverlay=pi3-disable-bt' "$temp_file"
+    sed -i '1 s|$| video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0|' "$COMMAND_LINE_FILE"
 
     while IFS= read -r line || [[ -n "$line" ]]; do
         if [[ "$line" =~ ^dtoverlay=vc4-kms-v3d$ ]]; then
-            printf "#%s\n" "$line" >> "$temp_file"
+            #printf "#%s\n" "$line" >> "$temp_file"
             printf "dtoverlay=vc4-kms-dsi-7inch\n" >> "$temp_file"
-            printf "#gpu_mem=256\n" >> "$temp_file"
-            printf "display_rotate=1 #1：90；2: 180； 3: 270\n" >> "$temp_file"
             found=1
         else
             printf "%s\n" "$line" >> "$temp_file"
         fi
     done < "$CONFIG_FILE"
-
+    
     if [[ "$found" -eq 0 ]]; then
         rm -f "$temp_file"
         printf "Error: Target dtoverlay line not found in config file\n" >&2

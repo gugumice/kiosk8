@@ -10,9 +10,7 @@ import logging
 import requests
 import kiosk_config
 from pathlib import Path
-
 from time import sleep
-
 queue_to_gui = Queue()
 config = dict()
 
@@ -119,6 +117,27 @@ def set_brightness(level: int, path:str = "/sys/class/backlight") -> None:
     if errors:
         logging.debug("Some backlight devices failed, but brightness was set: %s", errors)
 
+def set_screen_dpms(timeout_seconds: int) -> None:
+    """
+    Set X11 screen blanking timeout.
+
+    timeout_seconds=0 disables the screen saver.
+    """
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+    if timeout_seconds <= 0:
+        subprocess.run(
+            ["xset", "-dpms"],
+            env=env,
+            check=True
+        )
+    else:
+        subprocess.run(
+            ["xset", "dpms", "{} {} {}".format(timeout_seconds, timeout_seconds, timeout_seconds)],
+            env=env,
+            check=True
+        )
+        
 def host_connection_ok(url) -> None:
     '''
     Test connection to host
@@ -134,7 +153,7 @@ def is_working_time(now:str = None, start:str='7:30', end:str='19:00', workdays:
     now = datetime.now() if now is None else datetime.strptime(now, "%H:%M").time()
     # Convert strings to time objects
     start_time = datetime.strptime(start, "%H:%M").time()
-    end_time = datetime.strptime(end, "%H:%M").time()
+    end_time = datetime.strptime(end, "%H:%M").time()    
     return (now.weekday() in workdays) and (start_time <= now.time() <= end_time)
 
 class WatchDog(object):
@@ -161,13 +180,17 @@ class WatchDog(object):
             return(False)
 def main():
     config = kiosk_config.read_config(os.path.join(os.getcwd(),'kiosk.ini'))
+    print(config)
+    print(is_working_time(start=config['working_hours'][0], end=config['working_hours'][1], workdays=tuple(config['working_days'])))
+    set_screen_dpms(0)
+
     #speak_status('assets/lang_LAT.wav', background=True)
     #speak_status(os.path.join(config['assets_loader'], 'start_print{}.wav'.format('LAT')), background=False)
-    set_brightness(255, config)
-    sleep(5)
-    set_brightness(100, config)
-    sleep(5)
-    set_brightness(0, config)
+    # set_brightness(255, config)
+    # sleep(5)
+    # set_brightness(100, config)
+    # sleep(5)
+    # set_brightness(0, config)
 
 
     # w = config['watchdog_device']

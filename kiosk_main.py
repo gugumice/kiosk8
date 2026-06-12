@@ -95,7 +95,7 @@ class MainFrame(ctk.CTkFrame):
         self.init_buttons()
         self.enable_buttons(self.selected_button)
         self._default_bttn_after = self.after(config['button_reset_to_default_time_ms'], self.set_to_default_bttn)
-    
+          
     def init_buttons(self):
         for lang in enumerate(self.config['languages']):
             button = KioskButton(self, lang=lang,
@@ -141,17 +141,23 @@ class MainFrame(ctk.CTkFrame):
             self.selected_button = self.config['default_language_index']
             self.disable_buttons(self.config['default_language_index'])
             self.enable_buttons(self.config['default_language_index'])
-        # Set screen backlight to normal or low
-        kiosk_utils.set_brightness(
-            self.config['screen_brightness_normal']
-            if kiosk_utils.is_working_time(
-                start=self.config['working_hours'][0],
-                end=self.config['working_hours'][1],
-                workdays=self.config['working_days'],
-            )
-            else
-                self.config['screen_brightness_inactive'],
-                        self.config['screen_brightness_path'])
+        # Set screen backlight to normal or low, depending on working hours, enable/disable screen powersave
+        logger.debug('Checking working time for setting brightness and powersave')
+        if kiosk_utils.is_working_time(start=self.config['working_hours'][0], end=self.config['working_hours'][1], workdays=self.config['working_days'],):
+            logger.debug('Powersave disabled)')
+            kiosk_utils.set_brightness(self.config['screen_brightness_normal'], self.config['screen_brightness_path'])
+            if self.winfo_toplevel()._display_dpms != 0:
+                self.winfo_toplevel()._display_dpms = 0
+                kiosk_utils.set_screen_dpms(0)
+                logger.debug('Set display dpms to {}'.format(self.winfo_toplevel()._display_dpms))
+        else:
+            logger.debug('Powersave enabled, timeout: {}'.format(self.config['screen_dpms_timeout_secs']))
+            kiosk_utils.set_brightness(self.config['screen_brightness_inactive'], self.config['screen_brightness_path'])
+            if self.winfo_toplevel()._display_dpms == 0:
+                self.winfo_toplevel()._display_dpms = self.config['screen_dpms_timeout_secs']
+                kiosk_utils.set_screen_dpms(self.config['screen_dpms_timeout_secs'])
+                logger.debug('Set display dpms to {}'.format(self.winfo_toplevel()._display_dpms))
+
         # Delete existing timer if present
         if self._default_bttn_after:
             self.after_cancel(self._default_bttn_after)
@@ -163,10 +169,14 @@ class MainFrame(ctk.CTkFrame):
         self.selected_button = lang[0]
         # Set screen backlight to active
         kiosk_utils.set_brightness(self.config["screen_brightness_active"], self.config['screen_brightness_path'])
+        if self.winfo_toplevel()._display_dpms != 0:
+            kiosk_utils.set_screen_dpms(0)
+            self.winfo_toplevel()._display_dpms = 0
+            logger.debug('Set display dpms to {}'.format(self.winfo_toplevel()._display_dpms))
+            return()
         #Debounce
         self.disable_buttons(self.selected_button)
         self.after(self.config['button_debounce_time_ms'], self.enable_buttons, self.selected_button)
-
         if self._default_bttn_after:
             self.after_cancel(self._default_bttn_after)
 
@@ -240,7 +250,6 @@ class KioskPopup(ctk.CTkToplevel):
         self.title = "KioskPopup"
         self.attributes("-topmost", True)
         self.time_created = time.time()
-
         self.frame = PopupFrame(master=self, config=config)
         self.frame.pack(fill=tk.BOTH, expand=True)
 
@@ -267,6 +276,7 @@ class KioskApp(ctk.CTk):
 
         self.height = self.config["screen_height"]
         self.width = self.config["screen_width"]
+        self._display_dpms=0
 
         # Canvas for popup widgets
         self.canvas = tk.Canvas(
@@ -318,6 +328,13 @@ class KioskApp(ctk.CTk):
             if not self.popup_window.frame.icon.stopped():
                 return
         if not self.queue_to_gui.empty():
+            logger.debug('Exiting powersave or low brightness mode due to message in queue')
+            if self.winfo_toplevel()._display_dpms != 0:
+                kiosk_utils.set_screen_dpms(0)
+                self.winfo_toplevel()._display_dpms = 0
+                logger.debug('Set display dpms off')
+            kiosk_utils.set_screen_dpms(0)
+            kiosk_utils.set_brightness(self.config['screen_brightness_normal'], self.config['screen_brightness_path'])
             ticket = self.queue_to_gui.get_nowait()
             if not isinstance(ticket, kiosk_utils.Ticket):
                 logger.error(f"Invalid message: {ticket}")
