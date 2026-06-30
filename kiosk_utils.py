@@ -117,37 +117,27 @@ def set_brightness(level: int, path:str = "/sys/class/backlight") -> None:
     if errors:
         logging.debug("Some backlight devices failed, but brightness was set: %s", errors)
 
-import os
-import subprocess
-
-def set_screen_timeout(timeout_seconds: int) -> None:
+def set_screen_dpms(timeout_seconds: int) -> None:
     """
     Set X11 screen blanking timeout.
 
     timeout_seconds=0 disables the screen saver.
     """
-
     env = os.environ.copy()
     env["DISPLAY"] = ":0"
-    #["xset", "s", "off"],
     if timeout_seconds <= 0:
         subprocess.run(
-            ["xset", "s", "reset"],
+            ["xset", "-dpms"],
             env=env,
             check=True
         )
     else:
         subprocess.run(
-            ["xset", "s", "on"],
+            ["xset", "dpms", "{} {} {}".format(timeout_seconds, timeout_seconds, timeout_seconds)],
             env=env,
             check=True
         )
-        subprocess.run(
-            ["xset", "s", str(timeout_seconds), str(timeout_seconds)],
-            env=env,
-            check=True
-        )
-
+        
 def host_connection_ok(url) -> None:
     '''
     Test connection to host
@@ -192,7 +182,7 @@ def main():
     config = kiosk_config.read_config(os.path.join(os.getcwd(),'kiosk.ini'))
     print(config)
     print(is_working_time(start=config['working_hours'][0], end=config['working_hours'][1], workdays=tuple(config['working_days'])))
-
+    set_screen_dpms(0)
 
     #speak_status('assets/lang_LAT.wav', background=True)
     #speak_status(os.path.join(config['assets_loader'], 'start_print{}.wav'.format('LAT')), background=False)

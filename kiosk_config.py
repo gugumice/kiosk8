@@ -27,7 +27,7 @@ def read_config(filename):
         'working_days': [0,1,2,3,4],
         'screen_brightness_to_min': 30,
         'screen_brightness_path': "/sys/class/backlight/rpi_backlight/brightness",
-        'screen_powersave': 300,
+        'screen_dpms_timeout_secs': 300,
         #Settings for button frame size
         'button_frame_height': 500,
         'button_frame_width': 300,
@@ -105,7 +105,7 @@ def read_config(filename):
         "kiosk_config['working_days'] = cf.gettuple('INTERFACE','working_days')",
         "kiosk_config['screen_brightness_to_min'] = cf.getint('INTERFACE','screen_brightness_to_min')",
         "kiosk_config['screen_brightness_path'] = cf.get('INTERFACE','screen_brightness_path')",
-        "kiosk_config['screen_powersave'] = cf.getint('INTERFACE','screen_powersave')",
+        "kiosk_config['screen_dpms_timeout_secs'] = cf.getint('INTERFACE','screen_dpms_timeout_secs')",
 
         "kiosk_config['screen_width'] = cf.getint('INTERFACE','screen_width')",
         "kiosk_config['screen_height'] = cf.getint('INTERFACE','screen_height')",

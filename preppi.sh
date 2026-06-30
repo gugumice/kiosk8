@@ -4,13 +4,14 @@ USER="pi"
 GROUP="kiosk"
 WORK_DIR="/opt/kiosk/"
 USER_DIR="/home/pi/"
+# Disable bluetooth & WiFi
 
+# Ensure the script is run as root
 if [[ $EUID -ne 0 ]]; then
     echo "Please run this script as root (e.g. sudo $0)"
     exit 1
 fi
 
-# Disable bluetooth & WiFi
 systemctl disable bluetooth.service
 systemctl disable hciuart.service
 
@@ -54,8 +55,10 @@ printf "Installing & configuring CUPS... done\n"
 #Rotate WaveShare display, set touchscreen rotation
 ./touchpad_rules.sh
 printf "Setting touchpad... done\n"
-./update_config.sh "/boot/firmware/config.txt"
+./update_config_txt.sh
 printf "Updating config.txt... done\n"
+./update cmdline.sh
+printf "Updating cmdline.sh... done\n"
 
 #Set up watchdog
 addgroup watchdog

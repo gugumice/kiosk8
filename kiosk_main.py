@@ -144,13 +144,19 @@ class MainFrame(ctk.CTkFrame):
         # Set screen backlight to normal or low, depending on working hours, enable/disable screen powersave
         logger.debug('Checking working time for setting brightness and powersave')
         if kiosk_utils.is_working_time(start=self.config['working_hours'][0], end=self.config['working_hours'][1], workdays=self.config['working_days'],):
+            logger.debug('Powersave disabled)')
             kiosk_utils.set_brightness(self.config['screen_brightness_normal'], self.config['screen_brightness_path'])
-            kiosk_utils.set_screen_timeout(0)
-            logger.debug('Set normal brightness: {}, powersave: {}'.format(self.config['screen_brightness_normal'], self.config['screen_powersave']))
+            if self.winfo_toplevel()._display_dpms != 0:
+                self.winfo_toplevel()._display_dpms = 0
+                kiosk_utils.set_screen_dpms(0)
+                logger.debug('Set display dpms to {}'.format(self.winfo_toplevel()._display_dpms))
         else:
+            logger.debug('Powersave enabled, timeout: {}'.format(self.config['screen_dpms_timeout_secs']))
             kiosk_utils.set_brightness(self.config['screen_brightness_inactive'], self.config['screen_brightness_path'])
-            kiosk_utils.set_screen_timeout(self.config['screen_powersave'])
-            logger.debug('Set inactive brightness: {}, powersave: on'.format(self.config['screen_brightness_inactive'], self.config['screen_powersave']))
+            if self.winfo_toplevel()._display_dpms == 0:
+                self.winfo_toplevel()._display_dpms = self.config['screen_dpms_timeout_secs']
+                kiosk_utils.set_screen_dpms(self.config['screen_dpms_timeout_secs'])
+                logger.debug('Set display dpms to {}'.format(self.winfo_toplevel()._display_dpms))
 
         # Delete existing timer if present
         if self._default_bttn_after:
@@ -163,7 +169,11 @@ class MainFrame(ctk.CTkFrame):
         self.selected_button = lang[0]
         # Set screen backlight to active
         kiosk_utils.set_brightness(self.config["screen_brightness_active"], self.config['screen_brightness_path'])
-        kiosk_utils.set_screen_timeout(0)
+        if self.winfo_toplevel()._display_dpms != 0:
+            kiosk_utils.set_screen_dpms(0)
+            self.winfo_toplevel()._display_dpms = 0
+            logger.debug('Set display dpms to {}'.format(self.winfo_toplevel()._display_dpms))
+            return()
         #Debounce
         self.disable_buttons(self.selected_button)
         self.after(self.config['button_debounce_time_ms'], self.enable_buttons, self.selected_button)
@@ -266,6 +276,7 @@ class KioskApp(ctk.CTk):
 
         self.height = self.config["screen_height"]
         self.width = self.config["screen_width"]
+        self._display_dpms=0
 
         # Canvas for popup widgets
         self.canvas = tk.Canvas(
@@ -318,7 +329,11 @@ class KioskApp(ctk.CTk):
                 return
         if not self.queue_to_gui.empty():
             logger.debug('Exiting powersave or low brightness mode due to message in queue')
-            kiosk_utils.set_screen_timeout(0)
+            if self.winfo_toplevel()._display_dpms != 0:
+                kiosk_utils.set_screen_dpms(0)
+                self.winfo_toplevel()._display_dpms = 0
+                logger.debug('Set display dpms off')
+            kiosk_utils.set_screen_dpms(0)
             kiosk_utils.set_brightness(self.config['screen_brightness_normal'], self.config['screen_brightness_path'])
             ticket = self.queue_to_gui.get_nowait()
             if not isinstance(ticket, kiosk_utils.Ticket):
