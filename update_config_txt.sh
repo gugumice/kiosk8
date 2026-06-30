@@ -26,10 +26,9 @@ path = Path(sys.argv[1])
 text = path.read_text()
 
 block = """# Enable DRM VC4 V3D driver
-#dtoverlay=vc4-kms-v3d
+dtoverlay=vc4-kms-v3d
 dtoverlay=vc4-kms-dsi-7inch
-max_framebuffers=2
-display_rotate=1 #1：90；2: 180； 3: 270"""
+max_framebuffers=2"""
 
 lines = text.splitlines()
 
@@ -40,7 +39,6 @@ remove_prefixes = (
     "#dtoverlay=vc4-kms-v3d",
     "dtoverlay=vc4-kms-dsi-7inch",
     "max_framebuffers=2",
-    "display_rotate=",
 )
 
 new_lines = []
