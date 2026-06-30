@@ -22,10 +22,10 @@ cp "$FILE" "$BACKUP"
 echo "Backup created: $BACKUP"
 
 # Append consoleblank=0 if it's not already present
-if grep -qw "consoleblank=0" "$FILE"; then
-    echo "'consoleblank=0' is already present. No changes made."
+if grep -qw "video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0" "$FILE"; then
+    echo "' video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0' is already present. No changes made."
 else
-    sed -i 's/$/ consoleblank=0/' "$FILE"
+    sed -i 's/$/  video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0/' "$FILE"
     echo "Added 'consoleblank=0' to $FILE"
 fi
 
