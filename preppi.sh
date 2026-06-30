@@ -5,6 +5,13 @@ GROUP="kiosk"
 WORK_DIR="/opt/kiosk/"
 USER_DIR="/home/pi/"
 # Disable bluetooth & WiFi
+
+# Ensure the script is run as root
+if [[ $EUID -ne 0 ]]; then
+    echo "Please run this script as root (e.g. sudo $0)"
+    exit 1
+fi
+
 systemctl disable bluetooth.service
 systemctl disable hciuart.service
 
