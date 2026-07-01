@@ -55,9 +55,9 @@ printf "Installing & configuring CUPS... done\n"
 #Rotate WaveShare display, set touchscreen rotation
 ./touchpad_rules.sh
 printf "Setting touchpad... done\n"
-./update_config_txt.sh
+./update_config_txt.sh "/boot/firmware/config.txt"
 printf "Updating config.txt... done\n"
-./update cmdline.sh
+./update_cmdline.sh
 printf "Updating cmdline.sh... done\n"
 
 #Set up watchdog
