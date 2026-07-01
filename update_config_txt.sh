@@ -1,66 +1,79 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -euo pipefail
+CONFIG_FILE=""
+BACKUP_FILE=""
 
-FILE="/boot/firmware/config.txt"
-BACKUP="${FILE}.bak.$(date +%Y%m%d_%H%M%S)"
+sanitize_config_file() {
+    if [[ -z "$CONFIG_FILE" ]]; then
+        printf "Error: No config file path provided\n" >&2
+        return 1
+    fi
 
-if [[ $EUID -ne 0 ]]; then
-    echo "Please run this script as root, e.g. sudo $0"
-    exit 1
-fi
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        printf "Error: Config file not found: %s\n" "$CONFIG_FILE" >&2
+        return 1
+    fi
 
-if [[ ! -f "$FILE" ]]; then
-    echo "Error: $FILE does not exist."
-    exit 1
-fi
+    if [[ ! -r "$CONFIG_FILE" || ! -w "$CONFIG_FILE" ]]; then
+        printf "Error: Config file is not readable or writable: %s\n" "$CONFIG_FILE" >&2
+        return 1
+    fi
+}
 
-cp "$FILE" "$BACKUP"
-echo "Backup created: $BACKUP"
+backup_config_file() {
+    # Create a backup
+    if ! cp -p "$CONFIG_FILE" "$BACKUP_FILE"; then
+        return 1
+    fi
+}
 
-python3 - "$FILE" <<'PY'
-import sys
-from pathlib import Path
+modify_config_file() {
+    local temp_file; temp_file=$(mktemp) || return 1
+    local found=0
+    local line;
 
-path = Path(sys.argv[1])
-text = path.read_text()
+    #sed -i '/^# Additional overlays.*/a dtoverlay=disable-wifi\ndtoverlay=disable-bt' "$temp_file"
+    sed -i '/^# Additional overlays.*/a dtoverlay=disable-wifi\ndtoverlay=disable-bt' "$CONFIG_FILE"
 
-block = """# Enable DRM VC4 V3D driver
-#dtoverlay=vc4-kms-v3d
-dtoverlay=vc4-kms-dsi-7inch
-max_framebuffers=2
-display_rotate=1 #1：90；2: 180； 3: 270"""
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ "$line" =~ ^dtoverlay=vc4-kms-v3d$ ]]; then
+            printf "#%s\n" "$line" >> "$temp_file"
+            printf "dtoverlay=vc4-kms-dsi-7inch\n" >> "$temp_file"
+            found=1
+        else
+            printf "%s\n" "$line" >> "$temp_file"
+        fi
+    done < "$CONFIG_FILE"
+    
+    if [[ "$found" -eq 0 ]]; then
+        rm -f "$temp_file"
+        printf "Error: Target dtoverlay line not found in config file\n" >&2
+        return 1
+    fi
 
-lines = text.splitlines()
+    mv "$temp_file" "$CONFIG_FILE"
+}
 
-# Remove existing related lines to avoid duplicates
-remove_prefixes = (
-    "# Enable DRM VC4 V3D driver",
-    "dtoverlay=vc4-kms-v3d",
-    "#dtoverlay=vc4-kms-v3d",
-    "dtoverlay=vc4-kms-dsi-7inch",
-    "max_framebuffers=2",
-    "display_rotate=",
-)
+main() {
+    if [[ $# -ne 1 ]]; then
+        printf "Usage: %s <path_to_config_file>\n" "$0" >&2
+        return 1
+    fi
+    CONFIG_FILE="$1"
+    BACKUP_FILE="${CONFIG_FILE}.$(date +%Y%m%d-%H%M%S).bak"
 
-new_lines = []
-for line in lines:
-    stripped = line.strip()
-    if any(stripped.startswith(prefix) for prefix in remove_prefixes):
-        continue
-    new_lines.append(line)
+    if ! sanitize_config_file; then
+        return 1
+    fi
+    if ! backup_config_file; then
+        return 1
+    else
+        echo "Backup created: $BACKUP_FILE"
+    fi
+    
+    if ! modify_config_file; then
+        return 1
+    fi
+}
 
-# Keep one blank line before appending block if needed
-while new_lines and new_lines[-1].strip() == "":
-    new_lines.pop()
-
-new_text = "\n".join(new_lines)
-if new_text:
-    new_text += "\n\n"
-new_text += block + "\n"
-
-path.write_text(new_text)
-PY
-
-echo "Updated $FILE"
-echo "Done."
+main "$@"
