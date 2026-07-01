@@ -1,32 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-FILE="/boot/firmware/cmdline.txt"
-BACKUP="${FILE}.bak.$(date +%Y%m%d_%H%M%S)"
+# CMDLINE_FILE="/boot/firmware/cmdline.txt"
+CMDLINE_FILE="/home/pi/cmdline.txt"
+BACKUP_FILE="${CMDLINE_FILE}.$(date +%Y%m%d-%H%M%S).bak"
 
-# Ensure the script is run as root
-if [[ $EUID -ne 0 ]]; then
-    echo "Please run this script as root (e.g. sudo $0)"
-    exit 1
-fi
+PARAMS="video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0"
 
-# Check if the file exists
-if [[ ! -f "$FILE" ]]; then
-    echo "Error: $FILE does not exist."
+# Verify the file exists
+if [[ ! -f "$CMDLINE_FILE" ]]; then
+    echo "Error: $CMDLINE_FILE does not exist." >&2
     exit 1
 fi
 
 # Create a backup
-cp "$FILE" "$BACKUP"
-echo "Backup created: $BACKUP"
+cp -p "$CMDLINE_FILE" "$BACKUP_FILE"
+echo "Backup created: $BACKUP_FILE"
 
-# Append consoleblank=0 if it's not already present
-if grep -qw "video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0" "$FILE"; then
-    echo "' video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0' is already present. No changes made."
+# Read current contents
+current=$(<"$CMDLINE_FILE")
+
+# Append parameters only if not already present
+if [[ "$current" == *"$PARAMS"* ]]; then
+    echo "Parameters already present. No changes made."
 else
-    sed -i 's/$/ video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0/' "$FILE"
-    echo "Added 'consoleblank=0' to $FILE"
+    printf '%s %s\n' "$current" "$PARAMS" > "$CMDLINE_FILE"
+    echo "Parameters appended successfully."
 fi
-
-echo "Done."
