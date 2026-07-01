@@ -2,8 +2,7 @@
 
 set -euo pipefail
 
-# CMDLINE_FILE="/boot/firmware/cmdline.txt"
-CMDLINE_FILE="/home/pi/cmdline.txt"
+CMDLINE_FILE="/boot/firmware/cmdline.txt"
 BACKUP_FILE="${CMDLINE_FILE}.$(date +%Y%m%d-%H%M%S).bak"
 
 PARAMS="video=DSI-1:panel_orientation=right_side_up fbcon=rotate:1 consoleblank=0"
