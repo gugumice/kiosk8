@@ -32,8 +32,7 @@ modify_config_file() {
     local found=0
     local line;
 
-    #sed -i '/^# Additional overlays.*/a dtoverlay=disable-wifi\ndtoverlay=disable-bt' "$temp_file"
-    sed -i '/^# Additional overlays.*/a dtoverlay=disable-wifi\ndtoverlay=disable-bt' "$CONFIG_FILE"
+    #sed -i '/^# Additional overlays.*/a dtoverlay=disable-wifi\ndtoverlay=disable-bt' "$CONFIG_FILE"
 
     while IFS= read -r line || [[ -n "$line" ]]; do
         if [[ "$line" =~ ^dtoverlay=vc4-kms-v3d$ ]]; then
