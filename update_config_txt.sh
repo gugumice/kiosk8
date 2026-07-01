@@ -37,8 +37,9 @@ modify_config_file() {
 
     while IFS= read -r line || [[ -n "$line" ]]; do
         if [[ "$line" =~ ^dtoverlay=vc4-kms-v3d$ ]]; then
-            printf "#%s\n" "$line" >> "$temp_file"
+            printf "#%s\n" #"$line" >> "$temp_file"
             printf "dtoverlay=vc4-kms-dsi-7inch\n" >> "$temp_file"
+            printf "display_rotate=1 #1：90；2: 180； 3: 270\n" >> "$temp_file"
             found=1
         else
             printf "%s\n" "$line" >> "$temp_file"
