@@ -20,15 +20,12 @@ sanitize_config_file() {
     fi
 }
 
-
 backup_config_file() {
     # Create a backup
     if ! cp -p "$CONFIG_FILE" "$BACKUP_FILE"; then
         return 1
     fi
-    
 }
-
 
 modify_config_file() {
     local temp_file; temp_file=$(mktemp) || return 1
@@ -57,13 +54,11 @@ modify_config_file() {
     mv "$temp_file" "$CONFIG_FILE"
 }
 
-
 main() {
     if [[ $# -ne 1 ]]; then
         printf "Usage: %s <path_to_config_file>\n" "$0" >&2
         return 1
     fi
-
     CONFIG_FILE="$1"
     BACKUP_FILE="${CONFIG_FILE}.$(date +%Y%m%d-%H%M%S).bak"
 
