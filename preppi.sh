@@ -84,4 +84,5 @@ touch "${WORK_DIR}kiosk.log"
 ln -s "${WORK_DIR}kiosk.log" "${USER_DIR}kiosk.log"
 ln "${WORK_DIR}firstboot.service" "/etc/systemd/system/firstboot.service"
 ln "${WORK_DIR}kiosk.service" "/etc/systemd/system/kiosk.service"
+ln "${WORK_DIR}eth-speed.service" "/etc/systemd/system/eth-speed.service"
 systemctl enable firstboot.service
