@@ -1,10 +1,16 @@
 [Unit]
 Description=Set Ethernet link speed
-After=network-pre.target
-Before=NetworkManager.service
+Wants=network-pre.target
+After=sys-subsystem-net-devices-eth0.device
+After=NetworkManager.service
+BindsTo=sys-subsystem-net-devices-eth0.device
 
 [Service]
 Type=oneshot
+
+# Wait until eth0 and its driver respond to ethtool
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do /usr/sbin/ethtool eth0 >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1'
+
 ExecStart=/usr/sbin/ethtool -s eth0 speed 100 duplex full autoneg off
 RemainAfterExit=yes
 
