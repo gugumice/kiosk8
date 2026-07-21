@@ -91,7 +91,7 @@ def service_thread(th_ev: threading.Event, polling_int: float = 0.5,
                                 queue_tx=queue_to_gui)
         time.sleep(1)
 
-    kiosk_utils.send_ticket(ticket_value='Host connection OK\n{} eth spd{}'.format(config['url_test'].split('/')[2][:18], eth_speed),
+    kiosk_utils.send_ticket(ticket_value='Host connection OK\n{} eth spd: {}'.format(config['url_test'].split('/')[2][:18], eth_speed),
                             ticket_type=kiosk_utils.TicketPurpose.NET,
                             ticket_animate_cycles = 1,
                             queue_tx=queue_to_gui)
