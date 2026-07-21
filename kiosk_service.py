@@ -81,9 +81,11 @@ def service_thread(th_ev: threading.Event, polling_int: float = 0.5,
                             queue_tx=queue_to_gui)
     cnt = 0
     while not kiosk_utils.host_connection_ok(config['url_test']):
+        with open("/sys/class/net/eth0/speed", "r") as f:
+            eth_speed = int(f.read().strip())
         cnt += 1
-        kiosk_utils.send_ticket(ticket_value='Connection to\n{}\nfailed\nRetrying ({})...'
-                                .format(config['url_test'].split('/')[2], cnt),
+        kiosk_utils.send_ticket(ticket_value='Connection to\n{}\nfailed, eth {}\nRetrying ({})...'
+                                .format(config['url_test'].split('/')[2], cnt, eth_speed),
                                 ticket_type=kiosk_utils.TicketPurpose.NET,
                                 ticket_animate_cycles=1,
                                 queue_tx=queue_to_gui)
@@ -116,8 +118,6 @@ def service_thread(th_ev: threading.Event, polling_int: float = 0.5,
                         ticket_type=kiosk_utils.TicketPurpose.BCR,
                         ticket_animate_cycles = 1,
                         queue_tx=queue_to_gui)
-
-    
 
 
     #END of the startup sequence
