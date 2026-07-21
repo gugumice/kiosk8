@@ -1,18 +1,13 @@
 [Unit]
-Description=Set Ethernet link speed
-Wants=network-pre.target
-After=sys-subsystem-net-devices-eth0.device
+Description=Check Ethernet and apply 10 Mbps fallback
 After=NetworkManager.service
-BindsTo=sys-subsystem-net-devices-eth0.device
+Wants=NetworkManager.service
 
 [Service]
 Type=oneshot
-
-# Wait until eth0 and its driver respond to ethtool
-ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do /usr/sbin/ethtool eth0 >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1'
-
-ExecStart=/usr/sbin/ethtool -s eth0 speed 100 duplex full autoneg off
+ExecStart=/usr/local/sbin/check-ethernet.sh
 RemainAfterExit=yes
+TimeoutStartSec=120
 
 [Install]
 WantedBy=multi-user.target
