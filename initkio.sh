@@ -1,6 +1,7 @@
 #!/bin/bash
 systemctl enable kiosk.service;
-systemctl enable eth-speed.service;
+# Limit eth speed
+# systemctl enable 10eth-speed.service;
 systemctl disable firstboot.service;
 
 #raspi-config --expand-rootfs;
