@@ -6,7 +6,7 @@ Before=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/wait-for-ethernet.sh
+ExecStart=/opt/kiosk/wait-for-ethernet.sh
 RemainAfterExit=yes
 TimeoutStartSec=infinity
 StandardOutput=journal+console
