@@ -9,6 +9,8 @@ Type=oneshot
 ExecStart=/usr/local/sbin/wait-for-ethernet.sh
 RemainAfterExit=yes
 TimeoutStartSec=infinity
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target
