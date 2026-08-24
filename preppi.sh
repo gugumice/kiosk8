@@ -87,3 +87,4 @@ ln "${WORK_DIR}kiosk.service" "/etc/systemd/system/kiosk.service"
 ln "${WORK_DIR}wait-for-ethernet.service" "/etc/systemd/system/wait-for-ethernet.service"
 nmcli connection modify "Wired connection 1" ipv4.method auto
 systemctl enable firstboot.service
+systemctl enable wait-for-ethernet.service
