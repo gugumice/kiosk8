@@ -85,4 +85,5 @@ ln -s "${WORK_DIR}kiosk.log" "${USER_DIR}kiosk.log"
 ln "${WORK_DIR}firstboot.service" "/etc/systemd/system/firstboot.service"
 ln "${WORK_DIR}kiosk.service" "/etc/systemd/system/kiosk.service"
 ln "${WORK_DIR}10eth-speed.service" "/etc/systemd/system/10eth-speed.service"
+nmcli connection modify "Wired connection 1" ipv4.method auto
 systemctl enable firstboot.service
